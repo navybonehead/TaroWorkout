@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#142333">
+<title>Training Week</title>
+<style>
+:root{--ink:#172536;--muted:#667586;--paper:#f3f6f8;--card:#fff;--line:#dce3e9;--accent:#244d70;--green:#e5f2eb;--amber:#fff3d8}
+*{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+header{background:var(--ink);color:white;padding:18px 16px}header h1{margin:0;font-size:24px}header p{margin:5px 0 0;color:#c4d0dc;font-size:13px}
+main{max-width:980px;margin:auto;padding:14px}.toolbar,.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.toolbar{justify-content:space-between;margin-bottom:12px}
+button,select,input{font:inherit}button{border:0;border-radius:9px;padding:10px 12px;font-weight:650;background:#e3e9ef;color:var(--ink);cursor:pointer}.primary{background:var(--accent);color:white}.small{padding:7px 9px;font-size:13px}.weeknav{display:flex;align-items:center;gap:8px}.weeknav strong{min-width:135px;text-align:center}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:13px}.panel h2{font-size:18px;margin:0 0 10px}.hint{font-size:13px;color:var(--muted);line-height:1.45}
+.week{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:7px}.day{background:#f8fafb;border:1px solid var(--line);border-radius:10px;padding:8px;min-height:145px}.dayhead{font-weight:750;font-size:13px;margin-bottom:7px}.date{color:var(--muted);font-weight:500}.event,.workout{border-radius:8px;padding:7px;margin:5px 0;font-size:12px;line-height:1.3}.event{background:#e8edf2;border-left:3px solid #7b91a5}.event.pt{background:var(--green);border-left-color:#579574}.event.sport{background:#e6eff8;border-left-color:#5986b1}.workout{background:#fff0d1;border:1px solid #f0d89d;cursor:grab}.workout.done{background:var(--green);border-color:#b7d8c5}.workout b{display:block;font-size:13px}.day.drop{outline:2px dashed var(--accent);outline-offset:-3px}
+.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.workcard{border:1px solid var(--line);border-radius:12px;padding:12px;background:#fff}.workcard h3{margin:3px 0 6px;font-size:16px}.workcard ul{padding-left:18px;margin:8px 0;font-size:13px;line-height:1.5}.label{font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:700}
+form{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}label{font-size:12px;color:var(--muted);display:flex;flex-direction:column;gap:4px}input,select{border:1px solid #cbd5df;border-radius:8px;padding:9px;background:white;color:var(--ink);min-width:0}form button{align-self:end}
+.loggrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.logitem{border:1px solid var(--line);border-radius:10px;padding:10px}.logitem h3{margin:0 0 7px;font-size:14px}.setrow{display:grid;grid-template-columns:1fr 1fr;gap:7px}.setrow label{margin:4px 0}.full{grid-column:1/-1}.status{display:inline-block;background:#edf1f5;border-radius:99px;padding:4px 8px;font-size:11px;color:#526477}
+footer{padding:8px 0 28px;text-align:center;color:var(--muted);font-size:12px}
+@media(max-width:720px){main{padding:10px}.week{grid-template-columns:1fr}.day{min-height:0;display:grid;grid-template-columns:75px 1fr;gap:4px}.dayhead{grid-row:1/5}.cards{grid-template-columns:1fr}.loggrid{grid-template-columns:1fr}form{grid-template-columns:1fr 1fr}.weeknav strong{min-width:100px}}
+</style></head>
+<body>
+<header><h1>Training Week</h1><p>Three strength sessions · 35-minute target · sport and PT-aware planning</p></header>
+<main>
+<div class="toolbar">
+<div class="weeknav"><button id="prev" aria-label="Previous week">‹</button><strong id="weeklabel"></strong><button id="next" aria-label="Next week">›</button></div>
+<div class="row"><button class="primary" id="plan">Plan this week</button><button id="addEvent">+ Event</button></div>
+</div>
+<section class="panel"><h2>Weekly calendar</h2><p class="hint">Add or edit commitments, then plan. Drag workouts between days on a computer, or use Move on a phone. The workout rotation and logs stay intact when moved.</p><div id="calendar" class="week"></div></section>
+<section class="panel"><h2>Workout rotation</h2><p class="hint">Three planned sessions per week, each designed to fit roughly 35 minutes. Lower-body work is deliberately light during PT. Follow the therapist's restrictions and prescribed rehab exercises; this app does not clear him for sport or jumping.</p><div class="cards" id="workouts"></div></section>
+<section class="panel"><h2>Event entry</h2><form id="eventForm">
+<label>Event name<input id="eventName" placeholder="e.g. Tournament" required></label>
+<label>Type<select id="eventType"><option value="sport">Sport / practice</option><option value="pt">PT</option><option value="other">Other</option></select></label>
+<label>Date<input id="eventDate" type="date" required></label>
+<label>Start<input id="eventStart" type="time"></label>
+<label>End<input id="eventEnd" type="time"></label>
+<label>Repeat<select id="eventRepeat"><option value="once">Does not repeat</option><option value="weekly">Weekly</option></select></label>
+<label>Notes<input id="eventNotes" placeholder="Optional"></label>
+<button class="primary">Save event</button></form>
+<div id="eventList" class="hint" style="margin-top:10px"></div></section>
+<section class="panel"><h2>Workout log</h2><p class="hint">Record working sets only. Exercise entries are editable; use PT's own exercise list and dosage in the rehab tracker below.</p><div id="log" class="loggrid"></div></section>
+<section class="panel"><h2>PT exercise tracker</h2><p class="hint">Enter exactly what the PT prescribed. Completion tracking only—no automatic rehab progression.</p><form id="ptForm">
+<label class="full">Exercise<input id="ptName" placeholder="PT-prescribed exercise" required></label>
+<label>Sets<input id="ptSets" placeholder="As prescribed"></label>
+<label>Reps / time<input id="ptReps" placeholder="As prescribed"></label>
+<label>Frequency<input id="ptFreq" placeholder="e.g. daily"></label>
+<button class="primary">Add PT exercise</button></form><div id="ptList" style="margin-top:10px"></div></section>
+<div class="row"><button id="export">Export backup</button><button id="importBtn">Import backup</button><input id="importFile" type="file" accept=".json" hidden></div>
+<footer>Saved in this browser on this device. Export a backup periodically; import it on another device to transfer data.</footer>
+</main>
+<script>
+const DAY=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"],FULL=["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+const W=[
+{id:"A",name:"Upper push + shoulder",items:["Bench press or comfortable press · 3 work sets","Light shoulder-health accessory · 2 sets","Core exercise · 2–3 sets"],note:"Upper-body emphasis; keep reps smooth."},
+{id:"B",name:"Upper pull + core",items:["Supported row or pulldown · 3 work sets","Shoulder-health accessory · 2 sets","Core exercise · 2–3 sets"],note:"Choose stable positions that don't aggravate the ankle."},
+{id:"C",name:"Light lower + upper",items:["Light squat pattern, only if PT permits · 2 sets","Upper-body press or pull · 3 sets","Core exercise · 2 sets"],note:"No heavy lower-body loading or jumping during this PT phase."}
+];
+let data=JSON.parse(localStorage.getItem("sonTrainingV1")||'{"events":[],"placements":{},"done":{},"logs":{},"pt":[]}');
+let anchor=new Date();anchor.setHours(12,0,0,0);anchor.setDate(anchor.getDate()-anchor.getDay());
+const key=d=>d.toISOString().slice(0,10), addDays=(d,n)=>{let x=new Date(d);x.setDate(x.getDate()+n);return x};
+function save(){localStorage.setItem("sonTrainingV1",JSON.stringify(data))}
+function weekDates(){return Array.from({length:7},(_,i)=>addDays(anchor,i))}
+function eventsOn(date){let k=key(date);return data.events.filter(e=>e.date===k||(e.repeat==="weekly"&&new Date(e.date+"T12:00:00").getDay()===date.getDay()&&e.date<=k))}
+function render(){
+ document.getElementById("weeklabel").textContent=weekDates()[0].toLocaleDateString(undefined,{month:"short",day:"numeric"})+" – "+weekDates()[6].toLocaleDateString(undefined,{month:"short",day:"numeric"});
+ let cal=document.getElementById("calendar");cal.innerHTML="";
+ weekDates().forEach((d,i)=>{let el=document.createElement("div");el.className="day";el.dataset.date=key(d);
+ el.innerHTML='<div class="dayhead">'+DAY[d.getDay()]+'<br><span class="date">'+d.getDate()+'</span></div><div class="daybody"></div>';
+ let body=el.querySelector(".daybody");
+ eventsOn(d).forEach(e=>{let n=document.createElement("div");n.className="event "+(e.type==="pt"?"pt":e.type==="sport"?"sport":"");n.innerHTML="<b>"+esc(e.name)+"</b>"+(e.start?" · "+e.start:"")+(e.notes?"<br>"+esc(e.notes):"");body.append(n)});
+ W.forEach(w=>{if(data.placements[w.id]===key(d)){let n=document.createElement("div");n.className="workout"+(data.done[key(d)+w.id]?" done":"");n.draggable=true;n.dataset.wid=w.id;n.innerHTML="<b>"+(data.done[key(d)+w.id]?"✓ ":"")+ "Workout "+w.id+"</b>"+esc(w.name)+'<br><button class="small" data-move="'+w.id+'">Move</button> <button class="small" data-done="'+w.id+'">'+(data.done[key(d)+w.id]?"Undo":"Complete")+"</button>";body.append(n)}});
+ el.addEventListener("dragover",e=>{e.preventDefault();el.classList.add("drop")});el.addEventListener("dragleave",()=>el.classList.remove("drop"));el.addEventListener("drop",e=>{e.preventDefault();el.classList.remove("drop");let id=e.dataTransfer.getData("text");if(id){data.placements[id]=key(d);save();render()}});
+ cal.append(el)});
+ document.querySelectorAll("[data-wid]").forEach(el=>el.addEventListener("dragstart",e=>e.dataTransfer.setData("text",el.dataset.wid)));
+ document.querySelectorAll("[data-move]").forEach(b=>b.onclick=()=>{let id=b.dataset.move,choice=prompt("Move Workout "+id+" to a date (YYYY-MM-DD):",data.placements[id]||key(anchor));if(choice&&/^\d{4}-\d\d-\d\d$/.test(choice)){data.placements[id]=choice;save();render()}});
+ document.querySelectorAll("[data-done]").forEach(b=>b.onclick=()=>{let k=key(dForPlacement(b.dataset.done))+b.dataset.done;if(data.done[k])delete data.done[k];else data.done[k]=true;save();render()});
+ document.getElementById("workouts").innerHTML=W.map(w=>'<article class="workcard"><span class="label">Workout '+w.id+'</span><h3>'+w.name+'</h3><ul>'+w.items.map(x=>"<li>"+esc(x)+"</li>").join("")+'</ul><p class="hint">'+w.note+'</p><button class="small" data-start="'+w.id+'">Log workout</button></article>').join("");
+ document.querySelectorAll("[data-start]").forEach(b=>b.onclick=()=>{document.getElementById("log").scrollIntoView({behavior:"smooth"});document.querySelector("#log [data-work='"+b.dataset.start+"']")?.focus()});
+ renderEvents();renderLog();renderPT();
+}
+function dForPlacement(id){return new Date((data.placements[id]||key(anchor))+"T12:00:00")}
+function esc(s){return String(s||"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+document.getElementById("plan").onclick=()=>{let slots=weekDates().filter(d=>{let ev=eventsOn(d);return !ev.some(e=>e.type==="pt"||e.type==="sport")&&d.getDay()!==0});
+ // Prefer Friday, Saturday, Sunday; then open weekdays. No event-heavy days.
+ let preferred=[5,6,0,1,3,2,4],picked=[];
+ preferred.forEach(day=>{let d=weekDates().find(x=>x.getDay()===day);if(d&&!eventsOn(d).some(e=>e.type==="pt"||e.type==="sport")&&picked.length<3)picked.push(d)});
+ if(picked.length<3)weekDates().forEach(d=>{if(picked.length<3&&!picked.includes(d)&&!eventsOn(d).some(e=>e.type==="pt"||e.type==="sport"))picked.push(d)});
+ W.forEach((w,i)=>{if(picked[i])data.placements[w.id]=key(picked[i])});save();render()};
+document.getElementById("prev").onclick=()=>{anchor=addDays(anchor,-7);render()};document.getElementById("next").onclick=()=>{anchor=addDays(anchor,7);render()};
+document.getElementById("addEvent").onclick=()=>{document.getElementById("eventForm").scrollIntoView({behavior:"smooth"});document.getElementById("eventDate").value=key(anchor)};
+document.getElementById("eventForm").onsubmit=e=>{e.preventDefault();data.events.push({id:Date.now(),name:eventName.value,type:eventType.value,date:eventDate.value,start:eventStart.value,end:eventEnd.value,repeat:eventRepeat.value,notes:eventNotes.value});save();e.target.reset();render()};
+function renderEvents(){let out=document.getElementById("eventList");out.innerHTML=data.events.length?data.events.map(e=>'<div class="row" style="margin:6px 0"><span>'+esc(e.date)+' · '+esc(e.name)+(e.repeat==="weekly"?" (weekly)":"")+'</span><button class="small" data-del-event="'+e.id+'">Remove</button></div>').join(""):"No events added yet.";out.querySelectorAll("[data-del-event]").forEach(b=>b.onclick=()=>{data.events=data.events.filter(e=>e.id!=b.dataset.delEvent);save();render()})}
+function renderLog(){document.getElementById("log").innerHTML=W.map(w=>'<div class="logitem"><h3>Workout '+w.id+' · '+w.name+'</h3><label>Date<input type="date" data-date="'+w.id+'" value="'+key(anchor)+'"></label><label>Session notes<input data-note="'+w.id+'" placeholder="Optional"></label><div class="setrow">'+["Set 1","Set 2","Set 3"].map((s,i)=>'<label>'+s+' · reps<input inputmode="numeric" data-rep="'+w.id+'" data-i="'+i+'" placeholder="reps"></label><label>'+s+' · load<input inputmode="decimal" data-load="'+w.id+'" data-i="'+i+'" placeholder="lb / bodyweight"></label>').join("")+'</div><button class="primary small" data-save-log="'+w.id+'">Save session</button><div class="hint" data-history="'+w.id+'"></div></div>').join("");
+ document.querySelectorAll("[data-save-log]").forEach(b=>b.onclick=()=>{let id=b.dataset.saveLog,dt=document.querySelector('[data-date="'+id+'"]').value;let sets=[0,1,2].map(i=>({reps:document.querySelector('[data-rep="'+id+'"][data-i="'+i+'"]').value,load:document.querySelector('[data-load="'+id+'"][data-i="'+i+'"]').value})).filter(s=>s.reps||s.load);if(!sets.length){alert("Enter at least one work set.");return}data.logs[id]??=[];data.logs[id].push({date:dt,sets,note:document.querySelector('[data-note="'+id+'"]').value});save();renderLog()});
+ W.forEach(w=>{let h=data.logs[w.id]||[];document.querySelector('[data-history="'+w.id+'"]').textContent=h.length?"Previous: "+h.slice(-2).map(x=>x.date+" ("+x.sets.map(s=>s.reps+" reps"+(s.load?" @ "+s.load:"")).join(", ")+")").join(" · "):"No sessions logged yet."})}
+document.getElementById("ptForm").onsubmit=e=>{e.preventDefault();data.pt.push({id:Date.now(),name:ptName.value,sets:ptSets.value,reps:ptReps.value,freq:ptFreq.value,checks:{}});save();e.target.reset();renderPT()};
+function renderPT(){let el=document.getElementById("ptList");el.innerHTML=data.pt.length?data.pt.map(p=>'<div class="row" style="border-bottom:1px solid var(--line);padding:9px 0"><label style="flex:1"><span><b>'+esc(p.name)+'</b> · '+esc(p.sets)+' sets · '+esc(p.reps)+' · '+esc(p.freq)+'</span><input type="checkbox" data-pt="'+p.id+'" '+(p.checks[key(anchor)]?"checked":"")+'>Completed this week</label><button class="small" data-ptdel="'+p.id+'">Remove</button></div>').join(""):"No PT exercises entered.";el.querySelectorAll("[data-pt]").forEach(c=>c.onchange=()=>{let p=data.pt.find(x=>x.id==c.dataset.pt);p.checks[key(anchor)]=c.checked;save()});el.querySelectorAll("[data-ptdel]").forEach(b=>b.onclick=()=>{data.pt=data.pt.filter(x=>x.id!=b.dataset.ptdel);save();renderPT()})}
+document.getElementById("export").onclick=()=>{let a=document.createElement("a"),u=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:"application/json"}));a.href=u;a.download="son-training-backup.json";a.click();URL.revokeObjectURL(u)};
+document.getElementById("importBtn").onclick=()=>document.getElementById("importFile").click();
+document.getElementById("importFile").onchange=e=>{let f=e.target.files[0];if(!f)return;let r=new FileReader();r.onload=()=>{try{data=JSON.parse(r.result);save();render();alert("Backup imported.")}catch{alert("That backup file couldn't be read.")}};r.readAsText(f)};
+render();
+</script></body></html>
